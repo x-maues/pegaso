@@ -328,7 +328,10 @@ export function DashboardPage() {
       {/* --- HOW IT WORKS SECTION --- */}
       <section id="how" className="bg-white text-black py-16 sm:py-24 lg:py-32 px-4 sm:px-6">
         <div className="max-w-[1400px] mx-auto">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase mb-12 sm:mb-16 tracking-tighter">How It Works</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tighter">How It Works</h2>
+            <img src="/xlm.png" alt="XLM" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
             {[

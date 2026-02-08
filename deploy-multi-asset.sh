@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# ========================================
-# Multi-Asset Vault Deployment Script
-# ========================================
-# This script deploys USDC, wBTC, and wETH vaults
-# XLM vault is already deployed
 
 set -e  # Exit on error
 
