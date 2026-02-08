@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { horizonServer, formatBalance } from '../utils/stellar';
-import kit from '../utils/walletKit';
+import { isConnected, getAddress } from '@stellar/freighter-api';
+
+const STORAGE_KEY = 'pegaso_wallet_connected';
 
 interface Balance {
   asset_type: string;
@@ -15,6 +17,7 @@ interface Payment {
   created_at: string;
   amount?: string;
   asset_type?: string;
+  asset_code?: string;
   from?: string;
   to?: string;
 }
@@ -33,6 +36,7 @@ interface WalletContextValue {
   recentPayments: Payment[];
   accountData: AccountData | null;
   isConnected: boolean;
+  isLoading: boolean;
   refreshAddress: () => Promise<void>;
   disconnect: () => void;
 }
@@ -51,7 +55,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [allBalances, setAllBalances] = useState<Balance[]>([]);
   const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [accountData, setAccountData] = useState<AccountData | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnectedState, setIsConnectedState] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchAccountData = useCallback(async (addr: string) => {
     try {
@@ -105,56 +110,78 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAddress = useCallback(async () => {
     try {
-      const { address: addr } = await kit.getAddress();
-      if (addr) {
-        setAddress(addr);
-        setIsConnected(true);
-        console.log('Wallet connected:', addr);
-        await fetchAccountData(addr);
+      setIsLoading(true);
+      const connected = await isConnected();
+      
+      if (connected) {
+        const { address: pubKey } = await getAddress();
+        setAddress(pubKey);
+        setIsConnectedState(true);
+        localStorage.setItem(STORAGE_KEY, 'true');
+        console.log('Wallet connected:', pubKey);
+        await fetchAccountData(pubKey);
       } else {
         setAddress('');
         setBalance('0');
         setAllBalances([]);
         setAccountData(null);
         setRecentPayments([]);
-        setIsConnected(false);
+        setIsConnectedState(false);
       }
     } catch (e) {
-      console.error("Error getting address from kit:", e);
+      console.error("Error getting address from Freighter:", e);
       setAddress('');
       setBalance('0');
       setAllBalances([]);
       setAccountData(null);
       setRecentPayments([]);
-      setIsConnected(false);
+      setIsConnectedState(false);
+    } finally {
+      setIsLoading(false);
     }
   }, [fetchAccountData]);
 
   const disconnect = useCallback(() => {
-    kit.disconnect();
     setAddress('');
     setBalance('0');
     setAllBalances([]);
     setAccountData(null);
     setRecentPayments([]);
-    setIsConnected(false);
+    setIsConnectedState(false);
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('Wallet disconnected');
   }, []);
 
   useEffect(() => {
     // Check if already connected on mount (restores session automatically)
     const restoreConnection = async () => {
       try {
-        const { address: addr } = await kit.getAddress();
-        if (addr) {
-          setAddress(addr);
-          setIsConnected(true);
-          console.log('Restored wallet connection on mount:', addr);
-          await fetchAccountData(addr);
+        const wasPreviouslyConnected = localStorage.getItem(STORAGE_KEY) === 'true';
+        
+        if (wasPreviouslyConnected) {
+          console.log('Found stored wallet session, attempting to restore...');
+          
+          // Check if Freighter is still connected
+          const connected = await isConnected();
+          
+          if (connected) {
+            const { address: pubKey } = await getAddress();
+            setAddress(pubKey);
+            setIsConnectedState(true);
+            console.log('Restored wallet connection on mount:', pubKey);
+            await fetchAccountData(pubKey);
+          } else {
+            console.log('Freighter not connected, clearing stored session');
+            localStorage.removeItem(STORAGE_KEY);
+          }
         } else {
           console.log('No existing wallet connection');
         }
       } catch (error) {
-        console.log('No existing wallet connection');
+        console.log('Error restoring connection:', error);
+        localStorage.removeItem(STORAGE_KEY);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -168,11 +195,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       allBalances,
       recentPayments,
       accountData,
-      isConnected,
+      isConnected: isConnectedState,
+      isLoading,
       refreshAddress,
       disconnect,
     }),
-    [address, balance, allBalances, recentPayments, accountData, isConnected, refreshAddress, disconnect]
+    [address, balance, allBalances, recentPayments, accountData, isConnectedState, isLoading, refreshAddress, disconnect]
   );
 
   return (

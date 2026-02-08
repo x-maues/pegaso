@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useWallet } from '../context/WalletContext';
 import { formatAddress } from '../utils/format';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronDown, Check, Zap, Shield, TrendingUp, Coins, Globe, ExternalLink } from 'lucide-react';
+import { ChevronDown, Check, Zap, Shield, TrendingUp, Coins, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import kit from '../utils/walletKit';
+import { setAllowed } from '@stellar/freighter-api';
 
 const NoiseOverlay = () => (
   <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0"
@@ -121,7 +121,7 @@ const BentoCard = ({
 };
 
 export function DashboardPage() {
-  const { address, isConnected, refreshAddress } = useWallet();
+  const { address, isConnected, refreshAddress, disconnect } = useWallet();
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -136,20 +136,15 @@ export function DashboardPage() {
 
   const handleConnectClick = async () => {
     try {
-      await kit.openModal({
-        onWalletSelected: async (option) => {
-          await kit.setWallet(option.id);
-          await refreshAddress();
-        },
-      });
-    } catch {
-      // User closed modal
+      await setAllowed();
+      await refreshAddress();
+    } catch (error) {
+      console.error('Connection failed:', error);
     }
   };
 
   const handleDisconnect = () => {
-    kit.disconnect();
-    window.location.reload();
+    disconnect();
   };
 
   const handleNavigateToDashboard = () => {

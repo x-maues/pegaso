@@ -1,7 +1,8 @@
 {
-  "name": "vault-fe",
+  "name": "pegaso-vault",
   "private": true,
   "version": "0.1.0",
+  "description": "Multi-asset yield vault powered by Blend Protocol on Stellar",
   "type": "module",
   "scripts": {
     "dev": "vite",

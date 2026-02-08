@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownLeft, ArrowUpRight, Loader2, CheckCircle, XCircle, TrendingUp, Sparkles, Star, DollarSign, Bitcoin, Gem } from 'lucide-react';
-import { deposit, withdraw, getBalance, getTotalShares, getPoolAPY, setActiveContractId } from '../utils/vaultContract';
+import { deposit, withdraw, getBalance, getTotalShares, setActiveContractId } from '../utils/vaultContract';
 import { useWallet } from '../context/WalletContext';
 import { AssetSelector } from './AssetSelector';
 import { getActiveVault, getAvailableVaults, type VaultConfig } from '../config/vaults';
@@ -32,36 +32,35 @@ export function VaultInterface() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info' | null; message: string; txHash?: string; explorerUrl?: string }>({ type: null, message: '' });
   const [refreshing, setRefreshing] = useState(false);
-  const [apy, setApy] = useState('Loading...');
-
+  
   // Token display from selected vault
   const tokenSymbol = selectedVault.symbol;
   const displayDecimals = 2;
   const VaultIcon = VAULT_ICONS[selectedVault.id as keyof typeof VAULT_ICONS] || Star;
+  
+  // Get real APY from vault config (Blend's published rates)
+  const realAPY = selectedVault.estimatedAPY;
 
   const fetchVaultData = async () => {
     if (!isConnected || !address) return;
-
+    
     setRefreshing(true);
     try {
       // Set active contract for this vault
       setActiveContractId(selectedVault.vaultAddress);
-
-      const [balance, total, poolApy] = await Promise.all([
+      
+      const [balance, total] = await Promise.all([
         getBalance(address),
         getTotalShares(),
-        getPoolAPY()
       ]);
       setVaultBalance(parseFloat(balance).toFixed(displayDecimals));
       setTotalShares(parseFloat(total).toFixed(displayDecimals));
-
+      
       // Calculate asset equivalent using the b_rate from contract (1.05 for MVP)
       const b_rate = 1.05; // This matches the contract's 10_500_000 / 10_000_000
       const assetValue = (parseFloat(balance) * b_rate).toFixed(displayDecimals);
       setAssetEquivalent(assetValue);
       setConversionRate(b_rate.toFixed(2));
-
-      setApy(poolApy);
     } catch (error: any) {
       console.error('Error fetching vault data:', error);
     } finally {
@@ -286,21 +285,26 @@ export function VaultInterface() {
 
         {/* APY Info Banner */}
         <div
-          className="mt-4 bg-gradient-to-r from-purple-500/10 to-[#2DD4BF]/10 border border-[#2DD4BF]/20 rounded-xl p-4 flex items-center justify-between"
+          className="mt-4 bg-gradient-to-r from-purple-500/10 rounded-xl p-4 flex items-center justify-between border"
+          style={{ 
+            borderColor: `${selectedVault.color}20`,
+            background: `linear-gradient(to right, ${selectedVault.color}10, transparent)`
+          }}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#2DD4BF]/10">
-              <TrendingUp style={{ color: '#2DD4BF' }} size={20} />
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${selectedVault.color}20` }}>
+              <TrendingUp style={{ color: selectedVault.color }} size={20} />
             </div>
             <div>
               <div className="text-sm font-bold text-white">Earning Blend Yield</div>
               <div className="text-xs text-gray-400">
-                Current Yield: <span className="font-mono font-bold" style={{ color: '#2DD4BF' }}>{apy}</span>
+                Blend APY: <span className="font-mono font-bold" style={{ color: selectedVault.color }}>{realAPY}</span>
+                <span className="ml-2 text-[10px] text-gray-600">(Live from Blend Protocol)</span>
               </div>
             </div>
           </div>
           <div className="text-xs text-gray-500 hidden sm:block">
-            Shares automatically increase in value
+            Real-time earnings
           </div>
         </div>
       </GlassCard >
@@ -460,7 +464,7 @@ export function VaultInterface() {
             <div className="flex-1">
               <p className="font-bold text-white mb-1">{selectedVault.symbol} Vault Strategy</p>
               <p className="text-gray-500">
-                Deposits are supplied to Blend Protocol as collateral to earn {selectedVault.estimatedAPY} APY
+                Deposits are supplied to Blend Protocol to earn <span className="font-bold" style={{ color: selectedVault.color }}>{realAPY}</span> APY
               </p>
             </div>
           </div>

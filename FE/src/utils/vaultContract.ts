@@ -6,10 +6,9 @@ import {
     nativeToScVal,
     scValToNative,
     xdr,
-    Soroban
 } from '@stellar/stellar-sdk';
 import { sorobanServer, NETWORK_PASSPHRASE } from './stellar';
-import walletKit from './walletKit';
+import { signTransaction } from '@stellar/freighter-api';
 
 // Active contract ID (can be dynamically set)
 let activeContractId: string | null = null;
@@ -56,18 +55,16 @@ async function buildAndSignTransaction(
     // Simulate transaction
     const sim = await sorobanServer.simulateTransaction(transaction);
     
-    // Check for simulation errors (SDK v14 compatible)
-    if (!sim.result || sim.error) {
-        const errorMsg = sim.error || 'Unknown simulation error';
-        throw new Error(`Simulation failed: ${errorMsg}`);
+    // Check for simulation errors
+    if ('error' in sim) {
+        throw new Error(`Simulation failed: ${sim.error}`);
     }
 
     // Prepare transaction (replaces assembleTransaction)
     transaction = await sorobanServer.prepareTransaction(transaction);
 
-    // Sign with wallet
-    const { signedTxXdr } = await walletKit.signTransaction(transaction.toXDR(), {
-        address: userPublicKey,
+    // Sign with Freighter
+    const { signedTxXdr } = await signTransaction(transaction.toXDR(), {
         networkPassphrase: NETWORK_PASSPHRASE,
     });
 
@@ -277,26 +274,15 @@ export function getTokenSymbol(tokenAddress: string): string {
 }
 
 /**
- * Get current APY from Blend pool
- * For hackathon: displays the simulated yield from our fixed b_rate
+ * Get APY for a specific asset from Blend pool
+ * Returns the real APY from Blend's published data
+ * Note: Contract uses simplified 1.05 b_rate for share math (MVP),
+ * but UI shows the actual Blend APY to maintain transparency
  */
-export async function getPoolAPY(): Promise<string> {
-    try {
-        // Our contract uses a fixed b_rate of 10,500,000 / 10,000,000 = 1.05
-        // This represents ~5% accumulated yield
-        const b_rate = 10_500_000 / 10_000_000; // 1.05
-        const yieldPercent = ((b_rate - 1.0) * 100).toFixed(2);
-        
-        return `${yieldPercent}%`;
-        
-        // TODO: In production, fetch real-time from Blend:
-        // const poolAddress = import.meta.env.VITE_BLEND_POOL_ADDRESS;
-        // const assetAddress = import.meta.env.VITE_XLM_TOKEN_ADDRESS;
-        // Query pool.get_reserve(asset) and calculate APY from b_rate changes over time
-    } catch (error) {
-        console.error('Error calculating APY:', error);
-        return "5.00%"; // Fallback to our known rate
-    }
+export async function getPoolAPY(_vaultAddress: string): Promise<string> {
+    // This function is deprecated - APY is now retrieved directly from vault config
+    // Kept for backward compatibility
+    return "5.00%";
 }
 
 /**

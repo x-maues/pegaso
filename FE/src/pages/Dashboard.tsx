@@ -122,14 +122,17 @@ const TransactionItem = ({ type, amount, date, asset, txHash }: any) => {
 // --- Main Dashboard ---
 
 export function UserDashboard() {
-  const { address, balance, allBalances, recentPayments, accountData, isConnected, disconnect } = useWallet();
+  const { address, balance, allBalances, recentPayments, accountData, isConnected, isLoading, disconnect } = useWallet();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [vaultTransactions, setVaultTransactions] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isConnected) navigate('/');
-  }, [isConnected, navigate]);
+    // Only redirect if we're not loading AND not connected
+    if (!isLoading && !isConnected) {
+      navigate('/');
+    }
+  }, [isConnected, isLoading, navigate]);
 
   useEffect(() => {
     // Load vault transactions from localStorage
@@ -155,7 +158,7 @@ export function UserDashboard() {
   // Combine and sort all transactions
   const allTransactions = address ? [
     ...recentPayments.map(tx => {
-      const amount = parseFloat(tx.amount);
+      const amount = parseFloat(tx.amount || '0');
       const isContractCall = isNaN(amount) || amount === 0;
 
       return {
