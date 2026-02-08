@@ -18,7 +18,6 @@ export function DepositForm({ isConnected, onConnectClick }: DepositFormProps) {
     if (Number.isNaN(value) || value <= 0) {
       return;
     }
-    // Placeholder: wire to your vault contract deposit when VAULT_CONTRACT_ID is set
     console.log('Deposit amount:', value);
   };
 

@@ -47,6 +47,12 @@ const Navbar = ({ address, isConnected, onConnect, onNavigateToDashboard, onDisc
           >
             Dashboard
           </button>
+          <a
+            href="/capital"
+            className="cursor-pointer px-4 sm:px-6 py-2 bg-purple-500 text-white rounded-full text-xs font-bold hover:bg-purple-600 transition-all font-mono uppercase"
+          >
+            Capital
+          </a>
           <button
             onClick={onDisconnect}
             className="cursor-pointer p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -162,13 +168,17 @@ export function DashboardPage() {
           {/* Grid */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)] opacity-30 pointer-events-none z-10" />
 
-          <div className="absolute mr-32 inset-0 z-0">
-            <img
-              src="/bgb.png"
-              alt="pegaso"
-              className="absolute left-1/2 top-[24%] -translate-x-1/2 -translate-y-1/2
-              h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] object-contain opacity-90"
-            />
+          {/* Pegasus Image - Responsive positioning */}
+          <div className="absolute inset-0 z-0 flex items-center justify-center">
+            <div className="relative w-full max-w-7xl px-4">
+              <img
+                src="/bgb.png"
+                alt="pegaso"
+                className="w-full max-w-[400px] mb-40 sm:mb-60 sm:max-w-[450px] md:max-w-[500px] lg:max-w-[550px] xl:max-w-[600px] 
+                          h-auto object-contain opacity-90 mx-auto
+                          -mt-16 sm:-mt-20 md:-mt-24 lg:-mt-28"
+              />
+            </div>
             {/* Gradient Overlay for Bottom Fade */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/20 to-[#050505]" />
           </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useWallet } from '../context/WalletContext';
 import { motion } from 'framer-motion';
 import {
-  LogOut, ExternalLink, Activity, Copy, ChevronRight, Zap
+  LogOut, ExternalLink, Activity, Copy, ChevronRight, Zap, Building2
 } from 'lucide-react';
 import { formatAddress } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
@@ -284,14 +284,12 @@ export function UserDashboard() {
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center text-xs sm:text-sm">
-                <span className="text-gray-400">Trustlines</span>
-                <span className="font-mono text-white">{accountData?.subentry_count || 0} / 100</span>
+                <span className="text-gray-400">Subentries</span>
+                <span className="font-mono text-white">{accountData?.subentry_count || 0}</span>
               </div>
-              <div className="w-full h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#2DD4BF]"
-                  style={{ width: `${(accountData?.subentry_count || 0)}%` }}
-                />
+              <div className="flex justify-between items-center text-[10px] text-gray-600 font-mono">
+                <span>Trustlines, offers, signers, etc.</span>
+                <span>{((accountData?.subentry_count || 0) * 0.5).toFixed(1)} XLM reserve</span>
               </div>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-gray-600 font-mono pt-2 gap-1">
                 <span>STELLAR TESTNET</span>
@@ -300,6 +298,28 @@ export function UserDashboard() {
               <p className="text-[10px] text-gray-600 italic pt-2 border-t border-white/5">* Live data from Horizon API</p>
             </div>
           </GlassCard>
+
+          {/* Capital Strategy CTA */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            onClick={() => navigate('/capital')}
+            className="w-full p-6 bg-gradient-to-br from-[#2DD4BF]/10 to-purple-500/10 border border-[#2DD4BF]/30 rounded-2xl hover:border-[#2DD4BF] transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#2DD4BF]/20 flex items-center justify-center">
+                  <Building2 size={18} className="text-[#2DD4BF]" />
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-sm uppercase tracking-wide text-white">Capital Strategy</div>
+                  <div className="text-[10px] text-gray-500 font-mono">Risk-adjusted allocations</div>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-gray-600 group-hover:text-[#2DD4BF] transition-colors" />
+            </div>
+          </motion.button>
         </aside>
 
 

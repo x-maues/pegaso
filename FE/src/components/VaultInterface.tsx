@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, Loader2, CheckCircle, XCircle, TrendingUp,
 import { deposit, withdraw, getBalance, getTotalShares, setActiveContractId } from '../utils/vaultContract';
 import { useWallet } from '../context/WalletContext';
 import { AssetSelector } from './AssetSelector';
+import { SwapModal } from './SwapModal';
 import { getActiveVault, getAvailableVaults, type VaultConfig } from '../config/vaults';
 
 // Icon mapping for vault assets
@@ -32,6 +33,8 @@ export function VaultInterface() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info' | null; message: string; txHash?: string; explorerUrl?: string }>({ type: null, message: '' });
   const [refreshing, setRefreshing] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [withdrawnAmount, setWithdrawnAmount] = useState(0);
   
   // Token display from selected vault
   const tokenSymbol = selectedVault.symbol;
@@ -165,6 +168,11 @@ export function VaultInterface() {
       const vaultHistory = JSON.parse(localStorage.getItem('vault_tx_history') || '[]');
       vaultHistory.unshift(vaultTx);
       localStorage.setItem('vault_tx_history', JSON.stringify(vaultHistory.slice(0, 50))); // Keep last 50
+
+      // Store withdrawn amount for swap option (convert shares to XLM using rate)
+      const b_rate = 1.05;
+      const xlmAmount = parseFloat(withdrawAmount) * b_rate;
+      setWithdrawnAmount(xlmAmount);
 
       setWithdrawAmount('');
       await fetchVaultData();
@@ -341,6 +349,24 @@ export function VaultInterface() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
+                  
+                  {/* Show swap option after withdrawal */}
+                  {status.message.includes('Withdrawal') && withdrawnAmount > 0 && selectedVault.id === 'xlm' && (
+                    <div className="mt-4 p-4 bg-[#111] rounded-xl border border-white/10">
+                      <div className="text-xs text-gray-400 mb-1 font-mono">
+                        Withdrew {withdrawnAmount.toFixed(2)} XLM
+                      </div>
+                      <div className="text-[10px] text-amber-400 mb-3 font-mono">
+                        Note: Aquarius testnet has limited liquidity
+                      </div>
+                      <button
+                        onClick={() => setShowSwapModal(true)}
+                        className="w-full px-4 py-2 bg-[#2DD4BF] hover:bg-[#25b5a3] text-black rounded-lg text-sm font-bold transition-all uppercase tracking-wide"
+                      >
+                        Swap via Aquarius
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : (
                 status.message && <p className="text-sm font-mono">{status.message}</p>
@@ -349,6 +375,15 @@ export function VaultInterface() {
           </motion.div>
         )
       }
+
+      {/* Swap Modal */}
+      {showSwapModal && (
+        <SwapModal
+          onClose={() => setShowSwapModal(false)}
+          userAddress={address}
+          availableBalance={withdrawnAmount}
+        />
+      )}
 
       {/* Deposit/Withdraw Forms */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
